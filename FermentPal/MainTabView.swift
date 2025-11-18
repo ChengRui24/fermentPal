@@ -93,7 +93,7 @@ struct GlobalRecommendationsView: View {
                     overviewSection
 
                     // 按发酵罐分组的推荐
-                    ForEach(activeFermentations, id: \.persistentModelID) { fermentation in
+                    ForEach(Array(activeFermentations.enumerated()), id: \.element.persistentModelID) { index, fermentation in
                         let count = recommendationCount(for: fermentation)
                         let highPriority = highPriorityCount(for: fermentation)
 
@@ -145,7 +145,7 @@ struct GlobalRecommendationsView: View {
 
                     if !fermentationsWithoutRecommendations.isEmpty {
                         Section {
-                            ForEach(fermentationsWithoutRecommendations, id: \.persistentModelID) { fermentation in
+                            ForEach(Array(fermentationsWithoutRecommendations.enumerated()), id: \.element.persistentModelID) { index, fermentation in
                                 NavigationLink(destination: RecommendationsView(fermentation: fermentation)) {
                                     HStack(spacing: .spacingMD) {
                                         Text(fermentation.name)
