@@ -42,53 +42,46 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(activeFermentations) { f in
-                    NavigationLink(value: f) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(f.name)
-                                    .font(.headline)
-                                Spacer()
-
-                                // 推荐徽章
-                                let count = recommendationCount(for: f)
-                                if count > 0 {
-                                    RecommendationBadge(
-                                        count: count,
-                                        hasHighPriority: hasHighPriorityRecommendations(for: f)
-                                    )
-                                }
-
-                                StatusBadge(status: f.status)
+                // 活跃发酵罐
+                Section {
+                    if activeFermentations.isEmpty {
+                        EmptyState(
+                            icon: "flame",
+                            title: "暂无活跃发酵罐",
+                            message: "点击右上角 + 按钮创建你的第一个发酵罐",
+                            actionTitle: nil,
+                            action: nil
+                        )
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                    } else {
+                        ForEach(activeFermentations) { f in
+                            NavigationLink(value: f) {
+                                FermentationCard(
+                                    fermentation: f,
+                                    recommendationCount: recommendationCount(for: f),
+                                    hasHighPriority: hasHighPriorityRecommendations(for: f)
+                                )
                             }
-                            Text(f.createdAt, style: .date)
-                                .environment(\.locale, Locale(identifier: "zh_CN"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            .listRowInsets(EdgeInsets(top: .spacingSM, leading: .pageMargin, bottom: .spacingSM, trailing: .pageMargin))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .buttonStyle(.plain)
                         }
+                        .onDelete(perform: deleteActiveFermentations)
                     }
                 }
-                .onDelete(perform: deleteActiveFermentations)
-                
+
+                // 历史批次（可折叠）
                 if !completedFermentations.isEmpty {
                     Section {
                         if showingCompleted {
                             ForEach(completedFermentations) { f in
                                 NavigationLink(value: f) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        HStack {
-                                            Text(f.name)
-                                                .font(.headline)
-                                                .foregroundStyle(.secondary)
-                                            Spacer()
-                                            StatusBadge(status: f.status)
-                                        }
-                                        Text(f.createdAt, style: .date)
-                                            .environment(\.locale, Locale(identifier: "zh_CN"))
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
+                                    CompactFermentationCard(fermentation: f)
                                 }
+                                .listRowInsets(EdgeInsets(top: .spacingSM, leading: .pageMargin, bottom: .spacingSM, trailing: .pageMargin))
+                                .buttonStyle(.plain)
                             }
                         }
                     } header: {
@@ -96,17 +89,18 @@ struct ContentView: View {
                             Text("历史批次 (\(completedFermentations.count))")
                             Spacer()
                             Button(showingCompleted ? "隐藏" : "显示") {
-                                withAnimation(.easeInOut(duration: 0.3)) { 
-                                    showingCompleted.toggle() 
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    showingCompleted.toggle()
                                 }
                             }
                             .font(.caption)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.brandPrimary)
                         }
                     }
-                   
                 }
             }
+            .listStyle(.plain)
+            .background(Color.listBackground)
             .navigationTitle("发酵笔记")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -149,16 +143,20 @@ struct ContentView: View {
 private struct StatusBadge: View {
     let status: String
     var body: some View {
-        Text(label)
-            .font(.caption2)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(color.opacity(0.15))
-            .foregroundStyle(color)
-            .clipShape(Capsule())
+        EnhancedBadge(
+            text: label,
+            color: Color.forStatus(status),
+            size: .small
+        )
     }
-    private var label: String { switch status { case "active": return "进行中"; case "completed": return "已完成"; case "discarded": return "已废弃"; default: return status } }
-    private var color: Color { switch status { case "active": return .green; case "completed": return .blue; case "discarded": return .gray; default: return .orange } }
+    private var label: String {
+        switch status {
+        case "active": return "进行中"
+        case "completed": return "已完成"
+        case "discarded": return "已废弃"
+        default: return status
+        }
+    }
 }
 
 struct FermentationDetailView: View {
@@ -593,18 +591,13 @@ struct ChildrenView: View {
     var body: some View {
         List {
                 if children.isEmpty {
-                    VStack(spacing: 16) {
-                        Image(systemName: "square.stack.3d.up")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
-                        Text("暂无子项")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                        Text("点击分装按钮创建子项")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    EmptyState(
+                        icon: "square.stack.3d.up",
+                        title: "暂无子项",
+                        message: "点击底部分装按钮创建子项",
+                        actionTitle: nil,
+                        action: nil
+                    )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 } else {
@@ -670,23 +663,15 @@ struct RecordsView: View {
     var body: some View {
         List {
                 if items.isEmpty {
-                    VStack(spacing: 20) {
-                        Image(systemName: "list.bullet.clipboard")
-                            .font(.system(size: 60))
-                            .foregroundStyle(.green.opacity(0.6))
-                        Text("暂无记录")
-                            .font(.title2)
-                            .fontWeight(.medium)
-                            .foregroundStyle(.primary)
-                        Text("点击底部的记录按钮开始记录发酵过程")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    EmptyState(
+                        icon: "list.bullet.clipboard",
+                        title: "暂无记录",
+                        message: "点击底部的记录按钮开始记录发酵过程",
+                        actionTitle: nil,
+                        action: nil
+                    )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .padding(.vertical, 40)
                 } else {
                     Section {
                         ForEach(items) { record in
@@ -1387,29 +1372,19 @@ struct AddReminderView: View {
     }
 }
 
-// MARK: - 推荐徽章组件
+// MARK: - 推荐徽章组件（已优化为使用统一设计系统）
 
 struct RecommendationBadge: View {
     let count: Int
     let hasHighPriority: Bool
 
     var body: some View {
-        HStack(spacing: 2) {
-            Image(systemName: hasHighPriority ? "exclamationmark.triangle.fill" : "lightbulb.fill")
-                .font(.caption2)
-            Text("\(count)")
-                .font(.caption2)
-                .fontWeight(.medium)
-        }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .background(badgeColor.opacity(0.15))
-        .foregroundStyle(badgeColor)
-        .clipShape(Capsule())
-    }
-
-    private var badgeColor: Color {
-        hasHighPriority ? .red : .blue
+        EnhancedBadge(
+            text: "\(count)",
+            icon: hasHighPriority ? "exclamationmark.triangle.fill" : "lightbulb.fill",
+            color: hasHighPriority ? .danger : .info,
+            size: .small
+        )
     }
 }
 

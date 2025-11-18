@@ -53,7 +53,7 @@ struct MainTabView: View {
                 }
                 .tag(4)
         }
-        .accentColor(.green) // 主题色
+        .tint(.brandPrimary) // 统一主题色
     }
 }
 
@@ -101,19 +101,26 @@ struct GlobalRecommendationsView: View {
                             Section {
                                 NavigationLink(destination: RecommendationsView(fermentation: fermentation)) {
                                     HStack {
-                                        VStack(alignment: .leading, spacing: 4) {
+                                        VStack(alignment: .leading, spacing: .spacingSM) {
                                             Text(fermentation.name)
-                                                .font(.headline)
+                                                .font(.cardTitle)
+                                                .foregroundStyle(.textPrimary)
 
-                                            HStack(spacing: 12) {
-                                                Label("\(count)条建议", systemImage: "lightbulb.fill")
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
+                                            HStack(spacing: .spacingMD) {
+                                                EnhancedBadge(
+                                                    text: "\(count)条建议",
+                                                    icon: "lightbulb.fill",
+                                                    color: .info,
+                                                    size: .small
+                                                )
 
                                                 if highPriority > 0 {
-                                                    Label("\(highPriority)重要", systemImage: "exclamationmark.triangle.fill")
-                                                        .font(.caption)
-                                                        .foregroundStyle(.red)
+                                                    EnhancedBadge(
+                                                        text: "\(highPriority)重要",
+                                                        icon: "exclamationmark.triangle.fill",
+                                                        color: .danger,
+                                                        size: .small
+                                                    )
                                                 }
                                             }
                                         }
@@ -122,8 +129,8 @@ struct GlobalRecommendationsView: View {
 
                                         if highPriority > 0 {
                                             Circle()
-                                                .fill(.red)
-                                                .frame(width: 10, height: 10)
+                                                .fill(.danger)
+                                                .frame(width: 8, height: 8)
                                         }
                                     }
                                 }
@@ -140,15 +147,17 @@ struct GlobalRecommendationsView: View {
                         Section {
                             ForEach(fermentationsWithoutRecommendations) { fermentation in
                                 NavigationLink(destination: RecommendationsView(fermentation: fermentation)) {
-                                    HStack {
+                                    HStack(spacing: .spacingMD) {
                                         Text(fermentation.name)
                                             .font(.subheadline)
+                                            .foregroundStyle(.textPrimary)
                                         Spacer()
                                         Image(systemName: "checkmark.seal.fill")
-                                            .foregroundStyle(.green)
+                                            .foregroundStyle(.success)
+                                            .font(.caption)
                                         Text("一切正常")
                                             .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(.textSecondary)
                                     }
                                 }
                             }
@@ -169,29 +178,22 @@ struct GlobalRecommendationsView: View {
 
     private var emptyStateSection: some View {
         Section {
-            VStack(spacing: 16) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.gray.opacity(0.5))
-
-                Text("暂无发酵罐")
-                    .font(.headline)
-
-                Text("创建发酵罐后，这里会显示智能推荐")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 60)
+            EmptyState(
+                icon: "sparkles",
+                title: "暂无发酵罐",
+                message: "创建发酵罐后，这里会显示智能推荐",
+                actionTitle: nil,
+                action: nil
+            )
             .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
         }
     }
 
     private var overviewSection: some View {
         Section {
-            VStack(spacing: 12) {
-                HStack(spacing: 16) {
+            VStack(spacing: .spacingMD) {
+                HStack(spacing: .spacingLG) {
                     // 总推荐数
                     let totalRecommendations = activeFermentations.reduce(0) { sum, f in
                         sum + recommendationCount(for: f)
@@ -201,7 +203,7 @@ struct GlobalRecommendationsView: View {
                         value: "\(totalRecommendations)",
                         label: "总建议",
                         icon: "lightbulb.fill",
-                        color: .blue
+                        color: .info
                     )
 
                     // 高优先级数
@@ -213,7 +215,7 @@ struct GlobalRecommendationsView: View {
                         value: "\(totalHighPriority)",
                         label: "重要",
                         icon: "exclamationmark.triangle.fill",
-                        color: .red
+                        color: .danger
                     )
 
                     // 活跃发酵罐
@@ -221,7 +223,7 @@ struct GlobalRecommendationsView: View {
                         value: "\(activeFermentations.count)",
                         label: "进行中",
                         icon: "flame.fill",
-                        color: .orange
+                        color: .warning
                     )
                 }
             }
@@ -231,7 +233,7 @@ struct GlobalRecommendationsView: View {
     }
 }
 
-// MARK: - 迷你统计卡片
+// MARK: - 迷你统计卡片（优化版）
 
 struct StatMiniCard: View {
     let value: String
@@ -240,24 +242,23 @@ struct StatMiniCard: View {
     let color: Color
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: .spacingSM) {
             Image(systemName: icon)
                 .foregroundStyle(color)
-                .font(.title3)
+                .font(.iconSizeLarge)
 
             Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundStyle(.primary)
+                .font(.numberMedium)
+                .foregroundStyle(.textPrimary)
 
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.textSecondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .padding(.vertical, .spacingMD)
         .background(color.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: .cardCornerRadius))
     }
 }
 

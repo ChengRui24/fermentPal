@@ -71,29 +71,29 @@ struct ReferenceCaseView: View {
 
     private var onboardingCard: some View {
         Button(action: { showingOnboarding = true }) {
-            HStack(spacing: 16) {
+            HStack(spacing: .spacingLG) {
                 Image(systemName: "book.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(.blue)
+                    .font(.iconSizeXLarge)
+                    .foregroundStyle(.info)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: .spacingSM) {
                     Text("新手引导")
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+                        .font(.cardTitle)
+                        .foregroundStyle(.textPrimary)
 
                     Text("从零开始学习\(selectedType.displayName)发酵")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.textSecondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.textTertiary)
             }
-            .padding()
-            .background(Color.blue.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(.pagePadding)
+            .background(Color.info.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: .cardCornerRadius))
         }
         .buttonStyle(.plain)
     }
@@ -148,65 +148,64 @@ struct CaseCard: View {
     let `case`: ReferenceCase
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // 标题和状态
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(case.title)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+        UnifiedCard {
+            VStack(alignment: .leading, spacing: .spacingMD) {
+                // 标题和状态
+                HStack {
+                    VStack(alignment: .leading, spacing: .spacingSM) {
+                        Text(case.title)
+                            .font(.cardTitle)
+                            .foregroundStyle(.textPrimary)
 
-                    Text(case.stage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        Text(case.stage)
+                            .font(.caption)
+                            .foregroundStyle(.textSecondary)
+                    }
+
+                    Spacer()
+
+                    // 状态徽章
+                    EnhancedBadge(
+                        text: case.status == .success ? "成功" : "失败",
+                        icon: case.status == .success ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
+                        color: statusColor,
+                        size: .small
+                    )
                 }
 
-                Spacer()
-
-                // 状态徽章
-                Text(case.status == .success ? "✅" : "⚠️")
-                    .font(.title3)
-            }
-
-            // 关键指标
-            if !case.indicators.isEmpty {
-                HStack(spacing: 16) {
-                    ForEach(case.indicators.prefix(3)) { indicator in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(indicator.name)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                            Text(indicator.value)
-                                .font(.caption)
-                                .fontWeight(.medium)
+                // 关键指标
+                if !case.indicators.isEmpty {
+                    HStack(spacing: .spacingLG) {
+                        ForEach(case.indicators.prefix(3)) { indicator in
+                            VStack(alignment: .leading, spacing: .spacingXS) {
+                                Text(indicator.name)
+                                    .font(.caption2)
+                                    .foregroundStyle(.textSecondary)
+                                Text(indicator.value)
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.textPrimary)
+                            }
                         }
                     }
                 }
-            }
 
-            // 简短描述
-            if let summary = case.summary {
-                Text(summary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-
-            // 查看更多
-            HStack {
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                // 简短描述
+                if let summary = case.summary {
+                    Text(summary)
+                        .font(.caption)
+                        .foregroundStyle(.textSecondary)
+                        .lineLimit(2)
+                        .bodyTextStyle()
+                }
             }
         }
-        .padding()
-        .background(statusColor.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(statusColor.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: .cardCornerRadius))
     }
 
     private var statusColor: Color {
-        case.status == .success ? .green : .orange
+        case.status == .success ? .success : .warning
     }
 }
 
