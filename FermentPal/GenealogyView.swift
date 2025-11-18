@@ -29,35 +29,93 @@ struct GenealogyNode: Identifiable {
 }
 
 // MARK: - 家谱树管理器
+@Observable
 class GenealogyTree {
     var roots: [GenealogyNode] = []
-    
-    /// 从发酵罐列表构建树结构
-    func buildTree(from fermentations: [Fermentation]) {
+
+    // 缓存机制
+    private var lastBuildTime: Date?
+    private var lastFermentationCount: Int = 0
+    private var cachedDataHash: Int = 0
+
+    /// 从发酵罐列表构建树结构（带缓存优化）
+    func buildTree(from fermentations: [Fermentation], forceRebuild: Bool = false) {
+        // 计算数据哈希值（简单版本：基于数量和最后更新时间）
+        let currentHash = calculateHash(for: fermentations)
+
+        // 检查是否需要重建
+        if !forceRebuild,
+           let lastBuild = lastBuildTime,
+           Date().timeIntervalSince(lastBuild) < 60, // 60秒内不重建
+           currentHash == cachedDataHash {
+            // 使用缓存
+            return
+        }
+
+        // 重建树
+        rebuildTree(from: fermentations)
+
+        // 更新缓存信息
+        lastBuildTime = Date()
+        lastFermentationCount = fermentations.count
+        cachedDataHash = currentHash
+    }
+
+    /// 强制重建树
+    private func rebuildTree(from fermentations: [Fermentation]) {
         // 找出所有根节点（没有父节点的）
         let rootFermentations = fermentations.filter { $0.parent == nil }
-        
+
         // 为每个根节点构建子树
         roots = rootFermentations.map { buildNode(for: $0, level: 0, allFermentations: fermentations) }
             .sorted { $0.fermentation.createdAt > $1.fermentation.createdAt }
     }
-    
+
     /// 递归构建节点及其子节点
     private func buildNode(for fermentation: Fermentation, level: Int, allFermentations: [Fermentation]) -> GenealogyNode {
         // 找到所有子节点
         let childFermentations = fermentation.children.sorted { $0.createdAt > $1.createdAt }
-        
+
         // 递归构建子节点
         let childNodes = childFermentations.map { child in
             buildNode(for: child, level: level + 1, allFermentations: allFermentations)
         }
-        
+
         return GenealogyNode(
             id: UUID(),
             fermentation: fermentation,
             children: childNodes,
             level: level
         )
+    }
+
+    /// 计算数据哈希值（用于检测变化）
+    private func calculateHash(for fermentations: [Fermentation]) -> Int {
+        var hasher = Hasher()
+        hasher.combine(fermentations.count)
+
+        // 只哈希关键信息，避免性能问题
+        for fermentation in fermentations.prefix(50) { // 只检查前50个
+            hasher.combine(fermentation.name)
+            hasher.combine(fermentation.status)
+            hasher.combine(fermentation.children.count)
+            hasher.combine(fermentation.updatedAt.timeIntervalSince1970)
+        }
+
+        return hasher.finalize()
+    }
+
+    /// 清除缓存
+    func clearCache() {
+        lastBuildTime = nil
+        lastFermentationCount = 0
+        cachedDataHash = 0
+    }
+
+    /// 检查缓存是否有效
+    var isCacheValid: Bool {
+        guard let lastBuild = lastBuildTime else { return false }
+        return Date().timeIntervalSince(lastBuild) < 60
     }
     
     /// 查找从根节点到目标节点的路径
@@ -79,20 +137,20 @@ class GenealogyTree {
 struct GenealogyView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Fermentation.createdAt, order: .reverse) private var allFermentations: [Fermentation]
-    
+
     @State private var selectedFilter: FilterType = .all
-    
+    @State private var genealogyTree = GenealogyTree()
+
     enum FilterType: String, CaseIterable {
         case all = "全部"
         case active = "进行中"
         case completed = "已完成"
     }
-    
-    // 实时构建树结构，而不是缓存
+
+    // 使用缓存的树结构
     private var tree: GenealogyTree {
-        let tree = GenealogyTree()
-        tree.buildTree(from: allFermentations)
-        return tree
+        genealogyTree.buildTree(from: allFermentations)
+        return genealogyTree
     }
     
     private var filteredRoots: [GenealogyNode] {

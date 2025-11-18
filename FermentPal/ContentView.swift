@@ -16,54 +16,72 @@ struct ContentView: View {
     @State private var isPresentingGenealogy = false
     var selectedTab: Binding<Int>?
 
+    // 服务层用于获取推荐
+    private var service: FermentationService {
+        FermentationService(modelContext: modelContext)
+    }
+
     private var activeFermentations: [Fermentation] {
         allFermentations.filter { $0.status == "active" }
     }
-    
+
     private var completedFermentations: [Fermentation] {
         allFermentations.filter { $0.status != "active" }
+    }
+
+    // 获取推荐数量
+    private func recommendationCount(for fermentation: Fermentation) -> Int {
+        service.getRecommendations(for: fermentation).count
+    }
+
+    // 是否有高优先级推荐
+    private func hasHighPriorityRecommendations(for fermentation: Fermentation) -> Bool {
+        service.getRecommendations(for: fermentation).contains { $0.priority == .high }
     }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(activeFermentations) { f in
-                    NavigationLink(value: f) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(f.name)
-                                    .font(.headline)
-                                Spacer()
-                                StatusBadge(status: f.status)
+                // 活跃发酵罐
+                Section {
+                    if activeFermentations.isEmpty {
+                        EmptyState(
+                            icon: "flame",
+                            title: "暂无活跃发酵罐",
+                            message: "点击右上角 + 按钮创建你的第一个发酵罐",
+                            actionTitle: nil,
+                            action: nil
+                        )
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                    } else {
+                        ForEach(activeFermentations) { f in
+                            NavigationLink(value: f) {
+                                FermentationCard(
+                                    fermentation: f,
+                                    recommendationCount: recommendationCount(for: f),
+                                    hasHighPriority: hasHighPriorityRecommendations(for: f)
+                                )
                             }
-                            Text(f.createdAt, style: .date)
-                                .environment(\.locale, Locale(identifier: "zh_CN"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            .listRowInsets(EdgeInsets(top: .spacingSM, leading: .pageMargin, bottom: .spacingSM, trailing: .pageMargin))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .buttonStyle(.plain)
                         }
+                        .onDelete(perform: deleteActiveFermentations)
                     }
                 }
-                .onDelete(perform: deleteActiveFermentations)
-                
+
+                // 历史批次（可折叠）
                 if !completedFermentations.isEmpty {
                     Section {
                         if showingCompleted {
                             ForEach(completedFermentations) { f in
                                 NavigationLink(value: f) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        HStack {
-                                            Text(f.name)
-                                                .font(.headline)
-                                                .foregroundStyle(.secondary)
-                                            Spacer()
-                                            StatusBadge(status: f.status)
-                                        }
-                                        Text(f.createdAt, style: .date)
-                                            .environment(\.locale, Locale(identifier: "zh_CN"))
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
+                                    CompactFermentationCard(fermentation: f)
                                 }
+                                .listRowInsets(EdgeInsets(top: .spacingSM, leading: .pageMargin, bottom: .spacingSM, trailing: .pageMargin))
+                                .buttonStyle(.plain)
                             }
                         }
                     } header: {
@@ -71,17 +89,18 @@ struct ContentView: View {
                             Text("历史批次 (\(completedFermentations.count))")
                             Spacer()
                             Button(showingCompleted ? "隐藏" : "显示") {
-                                withAnimation(.easeInOut(duration: 0.3)) { 
-                                    showingCompleted.toggle() 
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    showingCompleted.toggle()
                                 }
                             }
                             .font(.caption)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(Color.brandPrimary)
                         }
                     }
-                   
                 }
             }
+            .listStyle(.plain)
+            .background(Color.listBackground)
             .navigationTitle("发酵笔记")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -124,16 +143,20 @@ struct ContentView: View {
 private struct StatusBadge: View {
     let status: String
     var body: some View {
-        Text(label)
-            .font(.caption2)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(color.opacity(0.15))
-            .foregroundStyle(color)
-            .clipShape(Capsule())
+        EnhancedBadge(
+            text: label,
+            color: Color.forStatus(status),
+            size: .small
+        )
     }
-    private var label: String { switch status { case "active": return "进行中"; case "completed": return "已完成"; case "discarded": return "已废弃"; default: return status } }
-    private var color: Color { switch status { case "active": return .green; case "completed": return .blue; case "discarded": return .gray; default: return .orange } }
+    private var label: String {
+        switch status {
+        case "active": return "进行中"
+        case "completed": return "已完成"
+        case "discarded": return "已废弃"
+        default: return status
+        }
+    }
 }
 
 struct FermentationDetailView: View {
@@ -568,18 +591,13 @@ struct ChildrenView: View {
     var body: some View {
         List {
                 if children.isEmpty {
-                    VStack(spacing: 16) {
-                        Image(systemName: "square.stack.3d.up")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
-                        Text("暂无子项")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                        Text("点击分装按钮创建子项")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    EmptyState(
+                        icon: "square.stack.3d.up",
+                        title: "暂无子项",
+                        message: "点击底部分装按钮创建子项",
+                        actionTitle: nil,
+                        action: nil
+                    )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 } else {
@@ -645,23 +663,15 @@ struct RecordsView: View {
     var body: some View {
         List {
                 if items.isEmpty {
-                    VStack(spacing: 20) {
-                        Image(systemName: "list.bullet.clipboard")
-                            .font(.system(size: 60))
-                            .foregroundStyle(.green.opacity(0.6))
-                        Text("暂无记录")
-                            .font(.title2)
-                            .fontWeight(.medium)
-                            .foregroundStyle(.primary)
-                        Text("点击底部的记录按钮开始记录发酵过程")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    EmptyState(
+                        icon: "list.bullet.clipboard",
+                        title: "暂无记录",
+                        message: "点击底部的记录按钮开始记录发酵过程",
+                        actionTitle: nil,
+                        action: nil
+                    )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .padding(.vertical, 40)
                 } else {
                     Section {
                         ForEach(items) { record in
@@ -741,6 +751,10 @@ struct EditRecordView: View {
     @State private var content: String
     @State private var feedingContent: String
 
+    // 新增状态
+    @State private var showingEnvironmentInput = false
+    @State private var showingFeedingInput = false
+
     init(record: Record) {
         self.record = record
         self._createdAt = State(initialValue: record.createdAt)
@@ -762,11 +776,30 @@ struct EditRecordView: View {
                 TextField("投料内容（例如：面粉100g、水90ml）", text: $feedingContent, axis: .vertical)
                     .lineLimit(2...6)
             }
+
+            // P1功能入口
+            Section {
+                Button(action: { showingEnvironmentInput = true }) {
+                    Label("记录环境数据", systemImage: "thermometer.medium")
+                }
+
+                Button(action: { showingFeedingInput = true }) {
+                    Label("结构化投料", systemImage: "leaf.fill")
+                }
+            } header: {
+                Text("高级功能")
+            }
         }
         .navigationTitle("编辑记录")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
             ToolbarItem(placement: .confirmationAction) { Button("保存", action: save) }
+        }
+        .sheet(isPresented: $showingEnvironmentInput) {
+            EnvironmentInputView(record: record, fermentationType: inferFermentationType())
+        }
+        .sheet(isPresented: $showingFeedingInput) {
+            FeedingInputView(record: record, fermentationType: inferFermentationType())
         }
     }
 
@@ -776,6 +809,21 @@ struct EditRecordView: View {
         record.isFeeding = !feedingContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         record.feedingContent = feedingContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : feedingContent.trimmingCharacters(in: .whitespacesAndNewlines)
         dismiss()
+    }
+
+    private func inferFermentationType() -> String {
+        guard let fermentation = record.fermentation else { return "其他" }
+        let name = fermentation.name.lowercased()
+        if name.contains("鲁邦") || name.contains("酸面团") || name.contains("面包") {
+            return "酸面团"
+        } else if name.contains("康普茶") || name.contains("kombucha") {
+            return "康普茶"
+        } else if name.contains("泡菜") || name.contains("酸菜") {
+            return "泡菜"
+        } else if name.contains("酸奶") || name.contains("yogurt") {
+            return "酸奶"
+        }
+        return "其他"
     }
 }
 
@@ -787,6 +835,11 @@ struct AddRecordView: View {
     @State private var createdAt: Date = Date()
     @State private var content: String = ""
     @State private var feedingContent: String = ""
+
+    // 新增状态：显示环境和投料录入
+    @State private var showingEnvironmentInput = false
+    @State private var showingFeedingInput = false
+    @State private var savedRecord: Record?
 
     var body: some View {
         Form {
@@ -802,11 +855,37 @@ struct AddRecordView: View {
                 TextField("投料内容（例如：面粉100g、水90ml）", text: $feedingContent, axis: .vertical)
                     .lineLimit(2...6)
             }
+
+            // P1功能入口
+            Section {
+                Button(action: { showRecordFirst(then: { showingEnvironmentInput = true }) }) {
+                    Label("记录环境数据", systemImage: "thermometer.medium")
+                }
+
+                Button(action: { showRecordFirst(then: { showingFeedingInput = true }) }) {
+                    Label("结构化投料", systemImage: "leaf.fill")
+                }
+            } header: {
+                Text("高级功能")
+            } footer: {
+                Text("先保存记录后可以添加环境数据和结构化投料")
+                    .font(.caption2)
+            }
         }
         .navigationTitle("添加记录")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
             ToolbarItem(placement: .confirmationAction) { Button("保存", action: save) }
+        }
+        .sheet(isPresented: $showingEnvironmentInput) {
+            if let record = savedRecord {
+                EnvironmentInputView(record: record, fermentationType: inferFermentationType())
+            }
+        }
+        .sheet(isPresented: $showingFeedingInput) {
+            if let record = savedRecord {
+                FeedingInputView(record: record, fermentationType: inferFermentationType())
+            }
         }
     }
 
@@ -819,7 +898,33 @@ struct AddRecordView: View {
                             feedingContent: feedingContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : feedingContent.trimmingCharacters(in: .whitespacesAndNewlines),
                             createdAt: createdAt)
         modelContext.insert(record)
+        savedRecord = record
         dismiss()
+    }
+
+    private func showRecordFirst(then action: @escaping () -> Void) {
+        // 如果还没保存，先保存
+        if savedRecord == nil {
+            save()
+        }
+        // 延迟执行以确保dismiss完成
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            action()
+        }
+    }
+
+    private func inferFermentationType() -> String {
+        let name = fermentation.name.lowercased()
+        if name.contains("鲁邦") || name.contains("酸面团") || name.contains("面包") {
+            return "酸面团"
+        } else if name.contains("康普茶") || name.contains("kombucha") {
+            return "康普茶"
+        } else if name.contains("泡菜") || name.contains("酸菜") {
+            return "泡菜"
+        } else if name.contains("酸奶") || name.contains("yogurt") {
+            return "酸奶"
+        }
+        return "其他"
     }
 }
 
@@ -1264,6 +1369,22 @@ struct AddReminderView: View {
                          isActive: true)
         modelContext.insert(r)
         dismiss()
+    }
+}
+
+// MARK: - 推荐徽章组件（已优化为使用统一设计系统）
+
+struct RecommendationBadge: View {
+    let count: Int
+    let hasHighPriority: Bool
+
+    var body: some View {
+        EnhancedBadge(
+            text: "\(count)",
+            icon: hasHighPriority ? "exclamationmark.triangle.fill" : "lightbulb.fill",
+            color: hasHighPriority ? .danger : .info,
+            size: .small
+        )
     }
 }
 
