@@ -129,7 +129,7 @@ struct GlobalRecommendationsView: View {
 
                                         if highPriority > 0 {
                                             Circle()
-                                                .fill(.danger)
+                                                .fill(Color.danger)
                                                 .frame(width: 8, height: 8)
                                         }
                                     }
