@@ -17,7 +17,7 @@ struct FermentationCard: View {
     var hasHighPriority: Bool = false
 
     var body: some View {
-        UnifiedCard {
+        UnifiedCard(style: .bordered) {  // 使用扁平边框样式
             VStack(alignment: .leading, spacing: .spacingMD) {
                 // 头部：名称 + 徽章组
                 HStack(alignment: .top) {
