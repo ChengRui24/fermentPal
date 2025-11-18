@@ -33,11 +33,15 @@ struct ReferenceCase: Identifiable {
     }
 }
 
-enum FermentationType: String, CaseIterable {
+enum FermentationType: String, CaseIterable, Hashable {
     case sourdough = "酸面团/鲁邦"
     case kombucha = "康普茶"
     case kimchi = "泡菜/酸菜"
     case yogurt = "酸奶"
+
+    var displayName: String {
+        rawValue
+    }
 
     var icon: String {
         switch self {
@@ -199,7 +203,7 @@ class ReferenceCaseLibrary {
         )
     ]
 
-    static let kombucha Cases: [ReferenceCase] = [
+    static let kombuchaCases: [ReferenceCase] = [
         ReferenceCase(
             type: .kombucha,
             stage: "一发第7天",

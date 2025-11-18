@@ -74,7 +74,7 @@ struct ReferenceCaseView: View {
             HStack(spacing: .spacingLG) {
                 Image(systemName: "book.fill")
                     .font(.iconSizeXLarge)
-                    .foregroundStyle(.info)
+                    .foregroundStyle(Color.info)
 
                 VStack(alignment: .leading, spacing: .spacingSM) {
                     Text("新手引导")
@@ -134,11 +134,11 @@ struct ReferenceCaseView: View {
     // MARK: - 数据过滤
 
     private var successCases: [ReferenceCase] {
-        ReferenceCaseLibrary.getCases(for: selectedType, status: .success)
+        ReferenceCaseLibrary.getSuccessCases(for: selectedType)
     }
 
     private var failureCases: [ReferenceCase] {
-        ReferenceCaseLibrary.getCases(for: selectedType, status: .failure)
+        ReferenceCaseLibrary.getFailureCases(for: selectedType)
     }
 }
 
@@ -153,11 +153,11 @@ struct CaseCard: View {
                 // 标题和状态
                 HStack {
                     VStack(alignment: .leading, spacing: .spacingSM) {
-                        Text(case.title)
+                        Text(`case`.title)
                             .font(.cardTitle)
                             .foregroundStyle(.textPrimary)
 
-                        Text(case.stage)
+                        Text(`case`.stage)
                             .font(.caption)
                             .foregroundStyle(.textSecondary)
                     }
@@ -166,17 +166,17 @@ struct CaseCard: View {
 
                     // 状态徽章
                     EnhancedBadge(
-                        text: case.status == .success ? "成功" : "失败",
-                        icon: case.status == .success ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
+                        text: `case`.status == .success ? "成功" : "失败",
+                        icon: `case`.status == .success ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
                         color: statusColor,
                         size: .small
                     )
                 }
 
                 // 关键指标
-                if !case.indicators.isEmpty {
+                if !`case`.indicators.isEmpty {
                     HStack(spacing: .spacingLG) {
-                        ForEach(case.indicators.prefix(3)) { indicator in
+                        ForEach(`case`.indicators.prefix(3)) { indicator in
                             VStack(alignment: .leading, spacing: .spacingXS) {
                                 Text(indicator.name)
                                     .font(.caption2)
@@ -191,7 +191,7 @@ struct CaseCard: View {
                 }
 
                 // 简短描述
-                if let summary = case.summary {
+                if let summary = `case`.summary {
                     Text(summary)
                         .font(.caption)
                         .foregroundStyle(.textSecondary)
@@ -205,7 +205,7 @@ struct CaseCard: View {
     }
 
     private var statusColor: Color {
-        case.status == .success ? .success : .warning
+        `case`.status == .success ? .success : .warning
     }
 }
 
@@ -224,27 +224,27 @@ struct CaseDetailView: View {
                     headerSection
 
                     // 关键指标
-                    if !case.indicators.isEmpty {
+                    if !`case`.indicators.isEmpty {
                         indicatorsSection
                     }
 
                     // 时间线
-                    if !case.timeline.isEmpty {
+                    if !`case`.timeline.isEmpty {
                         timelineSection
                     }
 
                     // 注意事项
-                    if !case.tips.isEmpty {
+                    if !`case`.tips.isEmpty {
                         tipsSection
                     }
 
                     // 原因分析（失败案例）
-                    if case.status == .failure, let cause = case.failureCause {
+                    if `case`.status == .failure, let cause = `case`.failureCause {
                         causeSection(cause)
                     }
 
                     // 预防措施（失败案例）
-                    if case.status == .failure, !case.prevention.isEmpty {
+                    if `case`.status == .failure, !`case`.prevention.isEmpty {
                         preventionSection
                     }
                 }
@@ -268,11 +268,11 @@ struct CaseDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(case.title)
+                    Text(`case`.title)
                         .font(.title2)
                         .fontWeight(.bold)
 
-                    Text(case.stage)
+                    Text(`case`.stage)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -281,17 +281,17 @@ struct CaseDetailView: View {
 
                 // 状态标志
                 VStack {
-                    Image(systemName: case.status == .success ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                    Image(systemName: `case`.status == .success ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
                         .font(.system(size: 40))
-                        .foregroundStyle(case.status == .success ? .green : .orange)
+                        .foregroundStyle(`case`.status == .success ? .green : .orange)
 
-                    Text(case.status == .success ? "成功" : "失败")
+                    Text(`case`.status == .success ? "成功" : "失败")
                         .font(.caption)
                         .fontWeight(.medium)
                 }
             }
 
-            if let description = case.description {
+            if let description = `case`.description {
                 Text(description)
                     .font(.body)
                     .foregroundStyle(.secondary)
@@ -308,7 +308,7 @@ struct CaseDetailView: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 12) {
-                ForEach(case.indicators) { indicator in
+                ForEach(`case`.indicators) { indicator in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(indicator.name)
                             .font(.caption)
@@ -338,7 +338,7 @@ struct CaseDetailView: View {
             Text("发展时间线")
                 .font(.headline)
 
-            ForEach(case.timeline) { entry in
+            ForEach(`case`.timeline) { entry in
                 HStack(alignment: .top, spacing: 12) {
                     // 时间标记
                     VStack(spacing: 4) {
@@ -346,7 +346,7 @@ struct CaseDetailView: View {
                             .fill(Color.blue)
                             .frame(width: 12, height: 12)
 
-                        if entry.id != case.timeline.last?.id {
+                        if entry.id != `case`.timeline.last?.id {
                             Rectangle()
                                 .fill(Color.blue.opacity(0.3))
                                 .frame(width: 2, height: 40)
@@ -374,7 +374,7 @@ struct CaseDetailView: View {
             Text("注意事项")
                 .font(.headline)
 
-            ForEach(case.tips, id: \.self) { tip in
+            ForEach(`case`.tips, id: \.self) { tip in
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "lightbulb.fill")
                         .foregroundStyle(.yellow)
@@ -406,7 +406,7 @@ struct CaseDetailView: View {
             Text("如何避免")
                 .font(.headline)
 
-            ForEach(case.prevention, id: \.self) { prevention in
+            ForEach(`case`.prevention, id: \.self) { prevention in
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "shield.fill")
                         .foregroundStyle(.green)
@@ -427,46 +427,50 @@ struct OnboardingGuideView: View {
 
     let type: FermentationType
 
-    private var guide: OnboardingGuide {
-        OnboardingGuideProvider.getGuide(for: type)
-    }
-
     var body: some View {
         NavigationStack {
             List {
                 // 介绍
                 Section {
-                    Text(guide.introduction)
+                    Text("欢迎使用\(type.displayName)发酵记录系统！\n\n这里是基础的发酵记录指南，帮助你系统地记录和管理发酵过程。")
                         .font(.body)
                 } header: {
                     Text("欢迎")
                 }
 
                 // 步骤
-                ForEach(guide.steps.indices, id: \.self) { index in
+                ForEach(OnboardingGuide.steps.indices, id: \.self) { index in
                     Section {
-                        StepCard(step: guide.steps[index], number: index + 1)
+                        StepCard(step: OnboardingGuide.steps[index], number: index + 1)
                     }
                 }
 
-                // 常见问题
-                if !guide.faq.isEmpty {
-                    Section {
-                        ForEach(guide.faq, id: \.question) { faq in
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(faq.question)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
+                // 快速入门模板
+                Section {
+                    ForEach(OnboardingGuide.quickStartTemplates.filter { $0.type == type }, id: \.name) { template in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(template.name)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
 
-                                Text(faq.answer)
+                            Text(template.description)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Text("时长：\(template.duration)")
+                                .font(.caption2)
+                                .foregroundStyle(.blue)
+
+                            ForEach(template.steps.indices, id: \.self) { idx in
+                                Text("• \(template.steps[idx])")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-                            .padding(.vertical, 4)
                         }
-                    } header: {
-                        Text("常见问题")
+                        .padding(.vertical, 4)
                     }
+                } header: {
+                    Text("快速入门")
                 }
             }
             .navigationTitle("\(type.displayName)新手指南")
@@ -547,7 +551,7 @@ struct StepCard: View {
         summary: "正常发酵的标准示例"
     )
 
-    return CaseDetailView(case: testCase)
+    CaseDetailView(case: testCase)
 }
 
 #Preview("新手引导") {
