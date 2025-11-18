@@ -16,12 +16,27 @@ struct ContentView: View {
     @State private var isPresentingGenealogy = false
     var selectedTab: Binding<Int>?
 
+    // 服务层用于获取推荐
+    private var service: FermentationService {
+        FermentationService(modelContext: modelContext)
+    }
+
     private var activeFermentations: [Fermentation] {
         allFermentations.filter { $0.status == "active" }
     }
-    
+
     private var completedFermentations: [Fermentation] {
         allFermentations.filter { $0.status != "active" }
+    }
+
+    // 获取推荐数量
+    private func recommendationCount(for fermentation: Fermentation) -> Int {
+        service.getRecommendations(for: fermentation).count
+    }
+
+    // 是否有高优先级推荐
+    private func hasHighPriorityRecommendations(for fermentation: Fermentation) -> Bool {
+        service.getRecommendations(for: fermentation).contains { $0.priority == .high }
     }
 
     var body: some View {
@@ -34,6 +49,16 @@ struct ContentView: View {
                                 Text(f.name)
                                     .font(.headline)
                                 Spacer()
+
+                                // 推荐徽章
+                                let count = recommendationCount(for: f)
+                                if count > 0 {
+                                    RecommendationBadge(
+                                        count: count,
+                                        hasHighPriority: hasHighPriorityRecommendations(for: f)
+                                    )
+                                }
+
                                 StatusBadge(status: f.status)
                             }
                             Text(f.createdAt, style: .date)
@@ -741,6 +766,10 @@ struct EditRecordView: View {
     @State private var content: String
     @State private var feedingContent: String
 
+    // 新增状态
+    @State private var showingEnvironmentInput = false
+    @State private var showingFeedingInput = false
+
     init(record: Record) {
         self.record = record
         self._createdAt = State(initialValue: record.createdAt)
@@ -762,11 +791,30 @@ struct EditRecordView: View {
                 TextField("投料内容（例如：面粉100g、水90ml）", text: $feedingContent, axis: .vertical)
                     .lineLimit(2...6)
             }
+
+            // P1功能入口
+            Section {
+                Button(action: { showingEnvironmentInput = true }) {
+                    Label("记录环境数据", systemImage: "thermometer.medium")
+                }
+
+                Button(action: { showingFeedingInput = true }) {
+                    Label("结构化投料", systemImage: "leaf.fill")
+                }
+            } header: {
+                Text("高级功能")
+            }
         }
         .navigationTitle("编辑记录")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
             ToolbarItem(placement: .confirmationAction) { Button("保存", action: save) }
+        }
+        .sheet(isPresented: $showingEnvironmentInput) {
+            EnvironmentInputView(record: record, fermentationType: inferFermentationType())
+        }
+        .sheet(isPresented: $showingFeedingInput) {
+            FeedingInputView(record: record, fermentationType: inferFermentationType())
         }
     }
 
@@ -776,6 +824,21 @@ struct EditRecordView: View {
         record.isFeeding = !feedingContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         record.feedingContent = feedingContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : feedingContent.trimmingCharacters(in: .whitespacesAndNewlines)
         dismiss()
+    }
+
+    private func inferFermentationType() -> String {
+        guard let fermentation = record.fermentation else { return "其他" }
+        let name = fermentation.name.lowercased()
+        if name.contains("鲁邦") || name.contains("酸面团") || name.contains("面包") {
+            return "酸面团"
+        } else if name.contains("康普茶") || name.contains("kombucha") {
+            return "康普茶"
+        } else if name.contains("泡菜") || name.contains("酸菜") {
+            return "泡菜"
+        } else if name.contains("酸奶") || name.contains("yogurt") {
+            return "酸奶"
+        }
+        return "其他"
     }
 }
 
@@ -787,6 +850,11 @@ struct AddRecordView: View {
     @State private var createdAt: Date = Date()
     @State private var content: String = ""
     @State private var feedingContent: String = ""
+
+    // 新增状态：显示环境和投料录入
+    @State private var showingEnvironmentInput = false
+    @State private var showingFeedingInput = false
+    @State private var savedRecord: Record?
 
     var body: some View {
         Form {
@@ -802,11 +870,37 @@ struct AddRecordView: View {
                 TextField("投料内容（例如：面粉100g、水90ml）", text: $feedingContent, axis: .vertical)
                     .lineLimit(2...6)
             }
+
+            // P1功能入口
+            Section {
+                Button(action: { showRecordFirst(then: { showingEnvironmentInput = true }) }) {
+                    Label("记录环境数据", systemImage: "thermometer.medium")
+                }
+
+                Button(action: { showRecordFirst(then: { showingFeedingInput = true }) }) {
+                    Label("结构化投料", systemImage: "leaf.fill")
+                }
+            } header: {
+                Text("高级功能")
+            } footer: {
+                Text("先保存记录后可以添加环境数据和结构化投料")
+                    .font(.caption2)
+            }
         }
         .navigationTitle("添加记录")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
             ToolbarItem(placement: .confirmationAction) { Button("保存", action: save) }
+        }
+        .sheet(isPresented: $showingEnvironmentInput) {
+            if let record = savedRecord {
+                EnvironmentInputView(record: record, fermentationType: inferFermentationType())
+            }
+        }
+        .sheet(isPresented: $showingFeedingInput) {
+            if let record = savedRecord {
+                FeedingInputView(record: record, fermentationType: inferFermentationType())
+            }
         }
     }
 
@@ -819,7 +913,33 @@ struct AddRecordView: View {
                             feedingContent: feedingContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : feedingContent.trimmingCharacters(in: .whitespacesAndNewlines),
                             createdAt: createdAt)
         modelContext.insert(record)
+        savedRecord = record
         dismiss()
+    }
+
+    private func showRecordFirst(then action: @escaping () -> Void) {
+        // 如果还没保存，先保存
+        if savedRecord == nil {
+            save()
+        }
+        // 延迟执行以确保dismiss完成
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            action()
+        }
+    }
+
+    private func inferFermentationType() -> String {
+        let name = fermentation.name.lowercased()
+        if name.contains("鲁邦") || name.contains("酸面团") || name.contains("面包") {
+            return "酸面团"
+        } else if name.contains("康普茶") || name.contains("kombucha") {
+            return "康普茶"
+        } else if name.contains("泡菜") || name.contains("酸菜") {
+            return "泡菜"
+        } else if name.contains("酸奶") || name.contains("yogurt") {
+            return "酸奶"
+        }
+        return "其他"
     }
 }
 
@@ -1264,6 +1384,32 @@ struct AddReminderView: View {
                          isActive: true)
         modelContext.insert(r)
         dismiss()
+    }
+}
+
+// MARK: - 推荐徽章组件
+
+struct RecommendationBadge: View {
+    let count: Int
+    let hasHighPriority: Bool
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Image(systemName: hasHighPriority ? "exclamationmark.triangle.fill" : "lightbulb.fill")
+                .font(.caption2)
+            Text("\(count)")
+                .font(.caption2)
+                .fontWeight(.medium)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(badgeColor.opacity(0.15))
+        .foregroundStyle(badgeColor)
+        .clipShape(Capsule())
+    }
+
+    private var badgeColor: Color {
+        hasHighPriority ? .red : .blue
     }
 }
 
