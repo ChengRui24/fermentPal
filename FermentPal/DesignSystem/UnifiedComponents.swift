@@ -217,11 +217,11 @@ struct EmptyState: View {
             VStack(spacing: .spacingSM) {
                 Text(title)
                     .font(.appTitle3)
-                    .foregroundStyle(.textPrimary)
+                    .foregroundStyle(Color.textPrimary)
 
                 Text(message)
                     .font(.body)
-                    .foregroundStyle(.textSecondary)
+                    .foregroundStyle(Color.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineLimit(nil)
                     .bodyTextStyle()
@@ -255,7 +255,7 @@ struct LoadingView: View {
 
             Text(message)
                 .font(.callout)
-                .foregroundStyle(.textSecondary)
+                .foregroundStyle(Color.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, .spacing4XL)
@@ -327,7 +327,7 @@ struct LabelView: View {
 
             Text(text)
                 .font(.footnote)
-                .foregroundStyle(.textSecondary)
+                .foregroundStyle(Color.textSecondary)
         }
     }
 }
@@ -343,7 +343,7 @@ struct LabelView: View {
                         .font(.cardTitle)
                     Text("这是一个使用统一卡片组件的示例")
                         .font(.body)
-                        .foregroundStyle(.textSecondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
             }
 

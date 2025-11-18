@@ -79,11 +79,11 @@ struct ReferenceCaseView: View {
                 VStack(alignment: .leading, spacing: .spacingSM) {
                     Text("新手引导")
                         .font(.cardTitle)
-                        .foregroundStyle(.textPrimary)
+                        .foregroundStyle(Color.textPrimary)
 
                     Text("从零开始学习\(selectedType.displayName)发酵")
                         .font(.caption)
-                        .foregroundStyle(.textSecondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
 
                 Spacer()
@@ -155,11 +155,11 @@ struct CaseCard: View {
                     VStack(alignment: .leading, spacing: .spacingSM) {
                         Text(`case`.title)
                             .font(.cardTitle)
-                            .foregroundStyle(.textPrimary)
+                            .foregroundStyle(Color.textPrimary)
 
                         Text(`case`.stage)
                             .font(.caption)
-                            .foregroundStyle(.textSecondary)
+                            .foregroundStyle(Color.textSecondary)
                     }
 
                     Spacer()
@@ -180,11 +180,11 @@ struct CaseCard: View {
                             VStack(alignment: .leading, spacing: .spacingXS) {
                                 Text(indicator.name)
                                     .font(.caption2)
-                                    .foregroundStyle(.textSecondary)
+                                    .foregroundStyle(Color.textSecondary)
                                 Text(indicator.value)
                                     .font(.caption)
                                     .fontWeight(.medium)
-                                    .foregroundStyle(.textPrimary)
+                                    .foregroundStyle(Color.textPrimary)
                             }
                         }
                     }
@@ -194,7 +194,7 @@ struct CaseCard: View {
                 if let summary = `case`.summary {
                     Text(summary)
                         .font(.caption)
-                        .foregroundStyle(.textSecondary)
+                        .foregroundStyle(Color.textSecondary)
                         .lineLimit(2)
                         .bodyTextStyle()
                 }

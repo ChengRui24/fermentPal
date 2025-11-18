@@ -94,7 +94,7 @@ struct ContentView: View {
                                 }
                             }
                             .font(.caption)
-                            .foregroundStyle(.brandPrimary)
+                            .foregroundStyle(Color.brandPrimary)
                         }
                     }
                 }

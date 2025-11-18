@@ -8,28 +8,9 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - 状态徽章组件（统一版本）
-
-struct StatusBadge: View {
-    let status: FermentationStatus
-
-    var body: some View {
-        Text(status.displayName)
-            .font(.caption2)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(status.color.opacity(0.15))
-            .foregroundStyle(status.color)
-            .clipShape(Capsule())
-    }
-}
-
-// 兼容String版本（过渡期使用）
-extension StatusBadge {
-    init(statusString: String) {
-        self.status = FermentationStatus(rawValue: statusString) ?? .active
-    }
-}
+// MARK: - 状态徽章组件
+// 注意：StatusBadge现在在ContentView.swift中使用EnhancedBadge实现
+// 这个旧版本已注释掉以避免重复声明
 
 // MARK: - 记录状态徽章
 

@@ -104,7 +104,7 @@ struct GlobalRecommendationsView: View {
                                         VStack(alignment: .leading, spacing: .spacingSM) {
                                             Text(fermentation.name)
                                                 .font(.cardTitle)
-                                                .foregroundStyle(.textPrimary)
+                                                .foregroundStyle(Color.textPrimary)
 
                                             HStack(spacing: .spacingMD) {
                                                 EnhancedBadge(
@@ -150,14 +150,14 @@ struct GlobalRecommendationsView: View {
                                     HStack(spacing: .spacingMD) {
                                         Text(fermentation.name)
                                             .font(.subheadline)
-                                            .foregroundStyle(.textPrimary)
+                                            .foregroundStyle(Color.textPrimary)
                                         Spacer()
                                         Image(systemName: "checkmark.seal.fill")
                                             .foregroundStyle(.success)
                                             .font(.caption)
                                         Text("一切正常")
                                             .font(.caption)
-                                            .foregroundStyle(.textSecondary)
+                                            .foregroundStyle(Color.textSecondary)
                                     }
                                 }
                             }
@@ -249,11 +249,11 @@ struct StatMiniCard: View {
 
             Text(value)
                 .font(.numberMedium)
-                .foregroundStyle(.textPrimary)
+                .foregroundStyle(Color.textPrimary)
 
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.textSecondary)
+                .foregroundStyle(Color.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, .spacingMD)
