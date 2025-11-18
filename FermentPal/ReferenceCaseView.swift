@@ -191,13 +191,10 @@ struct CaseCard: View {
                 }
 
                 // 简短描述
-                if let summary = `case`.summary {
-                    Text(summary)
-                        .font(.caption)
-                        .foregroundStyle(Color.textSecondary)
-                        .lineLimit(2)
-                        .bodyTextStyle()
-                }
+                Text(`case`.description)
+                    .font(.caption)
+                    .foregroundStyle(Color.textSecondary)
+                    .lineLimit(2)
             }
         }
         .background(statusColor.opacity(0.05))
