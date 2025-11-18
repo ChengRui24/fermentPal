@@ -196,56 +196,6 @@ struct FermentationValidator {
     }
 }
 
-// MARK: - 扩展
-
-extension Fermentation {
-    /// 发酵天数
-    var durationDays: Int {
-        Calendar.current.dateComponents([.day], from: createdAt, to: Date()).day ?? 0
-    }
-
-    /// 是否为根节点（没有父节点）
-    var isRoot: Bool {
-        parent == nil
-    }
-
-    /// 是否为叶子节点（没有子节点）
-    var isLeaf: Bool {
-        children.isEmpty
-    }
-
-    /// 后代总数（递归计算）
-    var descendantCount: Int {
-        children.count + children.reduce(0) { $0 + $1.descendantCount }
-    }
-
-    /// 类型安全的状态访问
-    var safeStatus: FermentationStatus {
-        FermentationStatus(rawValue: status) ?? .active
-    }
-
-    /// 类型安全的标签访问
-    var safeLabel: DistributionLabel? {
-        guard let label = label else { return nil }
-        return DistributionLabel(rawValue: label)
-    }
-}
-
-extension Record {
-    /// 类型安全的状态访问
-    var safeStatus: RecordStatus {
-        RecordStatus(rawValue: status) ?? .normal
-    }
-}
-
-extension Reminder {
-    /// 类型安全的重复类型访问
-    var safeRepeatType: ReminderRepeatType {
-        ReminderRepeatType(rawValue: repeatType) ?? .once
-    }
-
-    /// 是否已过期
-    var isExpired: Bool {
-        remindTime < Date() && safeRepeatType == .once
-    }
-}
+// MARK: - 扩展说明
+// 注意：Fermentation, Record, Reminder的扩展已在Item.swift中定义
+// 避免重复声明
