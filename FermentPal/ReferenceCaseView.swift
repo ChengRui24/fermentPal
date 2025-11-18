@@ -91,7 +91,7 @@ struct ReferenceCaseView: View {
                 Image(systemName: "chevron.right")
                     .foregroundStyle(.textTertiary)
             }
-            .padding(.pagePadding)
+            .padding(.pageMargin)
             .background(Color.info.opacity(0.1))
             .clipShape(RoundedRectangle(cornerRadius: .cardCornerRadius))
         }

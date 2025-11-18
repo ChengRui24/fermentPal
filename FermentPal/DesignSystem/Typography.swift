@@ -86,6 +86,23 @@ extension Font {
 
     /// 标签文字
     static let label = Font.system(size: 14, weight: .medium)
+
+    // MARK: - 图标字体
+
+    /// 小图标字体
+    static let iconSizeSmall = Font.system(size: CGFloat.iconSizeSmall)
+
+    /// 中图标字体
+    static let iconSizeMedium = Font.system(size: CGFloat.iconSizeMedium)
+
+    /// 大图标字体
+    static let iconSizeLarge = Font.system(size: CGFloat.iconSizeLarge)
+
+    /// 特大图标字体
+    static let iconSizeXLarge = Font.system(size: CGFloat.iconSizeXLarge)
+
+    /// 超大图标字体
+    static let iconSizeXXLarge = Font.system(size: CGFloat.iconSizeXXLarge)
 }
 
 // MARK: - 文本修饰符
