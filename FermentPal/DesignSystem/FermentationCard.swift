@@ -25,7 +25,7 @@ struct FermentationCard: View {
                     VStack(alignment: .leading, spacing: .spacingSM) {
                         Text(fermentation.name)
                             .font(.cardTitle)
-                            .foregroundStyle(.textPrimary)
+                            .foregroundStyle(Color.textPrimary)
                             .lineLimit(2)
 
                         // 元数据行
@@ -81,11 +81,11 @@ struct FermentationCard: View {
                 HStack {
                     Image(systemName: "arrow.clockwise.circle.fill")
                         .font(.caption2)
-                        .foregroundStyle(.textTertiary)
+                        .foregroundStyle(Color.textTertiary)
 
                     Text("更新于 \(fermentation.updatedAt, style: .relative)")
                         .font(.caption2)
-                        .foregroundStyle(.textTertiary)
+                        .foregroundStyle(Color.textTertiary)
                 }
             }
         }
@@ -138,7 +138,7 @@ struct CompactFermentationCard: View {
 
                 Text("\(fermentation.durationDays)天 · \(fermentation.records.count)条记录")
                     .font(.caption)
-                    .foregroundStyle(.textSecondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Spacer()
@@ -146,7 +146,7 @@ struct CompactFermentationCard: View {
             // 箭头
             Image(systemName: "chevron.right")
                 .font(.caption)
-                .foregroundStyle(.textTertiary)
+                .foregroundStyle(Color.textTertiary)
         }
         .padding(.vertical, .spacingSM)
     }

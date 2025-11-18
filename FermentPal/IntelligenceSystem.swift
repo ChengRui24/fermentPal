@@ -531,9 +531,9 @@ class AnalyticsEngine {
         let last = data.suffix(3)
         let counts = last.map { $0.1 }
 
-        if counts.last! > counts.first! * 1.5 {
+        if Double(counts.last!) > Double(counts.first!) * 1.5 {
             return .increasing
-        } else if counts.last! < counts.first! * 0.7 {
+        } else if Double(counts.last!) < Double(counts.first!) * 0.7 {
             return .decreasing
         } else {
             return .stable

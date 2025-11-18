@@ -178,33 +178,21 @@ struct RecommendationRow: View {
                     .fontWeight(.medium)
 
                 Spacer()
-
-                if let badge = recommendation.badge {
-                    Text(badge)
-                        .font(.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(priorityColor.opacity(0.15))
-                        .foregroundStyle(priorityColor)
-                        .clipShape(Capsule())
-                }
             }
 
-            // 原因
-            Text(recommendation.reason)
+            // Description
+            Text(recommendation.description)
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            // 行动建议
-            if let action = recommendation.suggestedAction {
-                HStack {
-                    Image(systemName: "arrow.right.circle.fill")
-                        .font(.caption)
-                    Text(action)
-                        .font(.caption)
-                }
-                .foregroundStyle(.blue)
+            // Action
+            HStack {
+                Image(systemName: "arrow.right.circle.fill")
+                    .font(.caption)
+                Text(recommendation.action)
+                    .font(.caption)
             }
+            .foregroundStyle(.blue)
         }
         .padding(.vertical, 4)
     }
@@ -320,11 +308,14 @@ struct StatusGuidanceView: View {
                     .font(.caption)
             }
 
-            // 补充信息
-            if let additionalInfo = suggestion.additionalInfo {
-                Text(additionalInfo)
+            // 可信度
+            HStack {
+                Text("可信度")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(String(format: "%.0f%%", suggestion.confidence * 100))
+                    .font(.caption)
+                    .foregroundStyle(suggestion.isHighConfidence ? .green : .orange)
             }
         } header: {
             Text("分析结果")

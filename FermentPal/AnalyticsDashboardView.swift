@@ -94,23 +94,14 @@ struct AnalyticsDashboardView: View {
                 )
             }
 
-            // 平均时长和活跃度
-            if let avgDuration = stats.averageDuration {
-                HStack(spacing: 20) {
-                    StatCard(
-                        title: "平均时长",
-                        value: "\(avgDuration)天",
-                        icon: "clock.fill",
-                        color: .cyan
-                    )
-
-                    StatCard(
-                        title: "活跃度",
-                        value: stats.activityScore,
-                        icon: "chart.line.uptrend.xyaxis",
-                        color: .pink
-                    )
-                }
+            // 活跃度
+            HStack(spacing: 20) {
+                StatCard(
+                    title: "活跃度",
+                    value: stats.activityScore,
+                    icon: "chart.line.uptrend.xyaxis",
+                    color: .pink
+                )
             }
         } header: {
             Text("概览")
@@ -120,17 +111,18 @@ struct AnalyticsDashboardView: View {
     private func trendsSection(_ trends: TrendData) -> some View {
         Section {
             // 月度趋势图表
-            if !trends.monthlyStats.isEmpty {
+            if !trends.monthlyCreationCount.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("月度趋势")
                         .font(.subheadline)
                         .fontWeight(.medium)
 
                     Chart {
-                        ForEach(trends.monthlyStats) { stat in
+                        ForEach(Array(trends.monthlyCreationCount.enumerated()), id: \.offset) { _, item in
+                            let (month, count) = item
                             BarMark(
-                                x: .value("月份", stat.month),
-                                y: .value("数量", stat.count)
+                                x: .value("月份", month),
+                                y: .value("数量", count)
                             )
                             .foregroundStyle(.blue.gradient)
                         }
@@ -145,80 +137,39 @@ struct AnalyticsDashboardView: View {
                 .padding(.vertical, 8)
             }
 
-            // 类型分布
-            if !trends.typeDistribution.isEmpty {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("类型分布")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+            // 总体趋势
+            VStack(alignment: .leading, spacing: 8) {
+                Text("总体趋势")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
 
-                    ForEach(Array(trends.typeDistribution.sorted(by: { $0.value > $1.value })), id: \.key) { type, count in
-                        HStack {
-                            Text(type.isEmpty ? "未分类" : type)
-                            Spacer()
-                            Text("\(count)")
-                                .foregroundStyle(.secondary)
-
-                            // 简单进度条
-                            let maxCount = trends.typeDistribution.values.max() ?? 1
-                            let percentage = Double(count) / Double(maxCount)
-                            GeometryReader { geometry in
-                                ZStack(alignment: .leading) {
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.2))
-                                    Rectangle()
-                                        .fill(Color.blue)
-                                        .frame(width: geometry.size.width * percentage)
-                                }
-                            }
-                            .frame(width: 60, height: 8)
-                            .clipShape(Capsule())
-                        }
-                        .font(.caption)
-                    }
+                HStack {
+                    Text("总发酵罐数")
+                    Spacer()
+                    Text("\(trends.totalCount)")
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 8)
-            }
+                .font(.caption)
 
-            // 成功率趋势
-            if !trends.successRateTrend.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("成功率趋势")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-
-                    Chart {
-                        ForEach(trends.successRateTrend) { point in
-                            LineMark(
-                                x: .value("时间", point.period),
-                                y: .value("成功率", point.rate * 100)
-                            )
-                            .foregroundStyle(.green.gradient)
-                            .interpolationMethod(.catmullRom)
-
-                            AreaMark(
-                                x: .value("时间", point.period),
-                                y: .value("成功率", point.rate * 100)
-                            )
-                            .foregroundStyle(.green.opacity(0.1).gradient)
-                            .interpolationMethod(.catmullRom)
-                        }
-                    }
-                    .frame(height: 150)
-                    .chartYAxis {
-                        AxisMarks(position: .leading) { value in
-                            AxisValueLabel {
-                                if let rate = value.as(Double.self) {
-                                    Text("\(Int(rate))%")
-                                }
-                            }
-                        }
-                    }
+                HStack {
+                    Text("趋势")
+                    Spacer()
+                    Text(trends.trend.displayName)
+                        .foregroundStyle(trendColor(trends.trend))
                 }
-                .padding(.vertical, 8)
+                .font(.caption)
             }
+            .padding(.vertical, 8)
         } header: {
             Text("趋势分析")
+        }
+    }
+
+    private func trendColor(_ trend: TrendDirection) -> Color {
+        switch trend {
+        case .increasing: return .green
+        case .stable: return .blue
+        case .decreasing: return .orange
         }
     }
 
@@ -311,8 +262,8 @@ struct InsightRow: View {
 
                 Spacer()
 
-                if let badge = insight.badge {
-                    Text(badge)
+                if insight.actionable {
+                    Text("可操作")
                         .font(.caption2)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -322,19 +273,9 @@ struct InsightRow: View {
                 }
             }
 
-            Text(insight.message)
+            Text(insight.description)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-
-            if let suggestion = insight.suggestion {
-                HStack {
-                    Image(systemName: "lightbulb.fill")
-                        .font(.caption2)
-                    Text(suggestion)
-                        .font(.caption)
-                }
-                .foregroundStyle(.blue)
-            }
         }
         .padding(.vertical, 4)
     }
@@ -343,8 +284,8 @@ struct InsightRow: View {
         switch insight.type {
         case .success: return "checkmark.circle.fill"
         case .warning: return "exclamationmark.triangle.fill"
-        case .suggestion: return "lightbulb.fill"
-        case .pattern: return "sparkles"
+        case .tip: return "lightbulb.fill"
+        case .insight: return "sparkles"
         }
     }
 
@@ -352,8 +293,8 @@ struct InsightRow: View {
         switch insight.type {
         case .success: return .green
         case .warning: return .orange
-        case .suggestion: return .blue
-        case .pattern: return .purple
+        case .tip: return .blue
+        case .insight: return .purple
         }
     }
 }

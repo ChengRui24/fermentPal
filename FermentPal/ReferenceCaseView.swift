@@ -89,7 +89,7 @@ struct ReferenceCaseView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .foregroundStyle(.textTertiary)
+                    .foregroundStyle(Color.textTertiary)
             }
             .padding(.pageMargin)
             .background(Color.info.opacity(0.1))
@@ -176,7 +176,7 @@ struct CaseCard: View {
                 // 关键指标
                 if !`case`.indicators.isEmpty {
                     HStack(spacing: .spacingLG) {
-                        ForEach(`case`.indicators.prefix(3)) { indicator in
+                        ForEach(Array(`case`.indicators.prefix(3)), id: \.name) { indicator in
                             VStack(alignment: .leading, spacing: .spacingXS) {
                                 Text(indicator.name)
                                     .font(.caption2)
@@ -238,14 +238,9 @@ struct CaseDetailView: View {
                         tipsSection
                     }
 
-                    // 原因分析（失败案例）
-                    if `case`.status == .failure, let cause = `case`.failureCause {
-                        causeSection(cause)
-                    }
-
-                    // 预防措施（失败案例）
-                    if `case`.status == .failure, !`case`.prevention.isEmpty {
-                        preventionSection
+                    // 常见错误（失败案例）
+                    if `case`.status == .failure && !`case`.commonMistakes.isEmpty {
+                        commonMistakesSection
                     }
                 }
                 .padding()
@@ -291,11 +286,9 @@ struct CaseDetailView: View {
                 }
             }
 
-            if let description = `case`.description {
-                Text(description)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            }
+            Text(`case`.description)
+                .font(.body)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -308,7 +301,7 @@ struct CaseDetailView: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 12) {
-                ForEach(`case`.indicators) { indicator in
+                ForEach(Array(`case`.indicators.enumerated()), id: \.offset) { _, indicator in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(indicator.name)
                             .font(.caption)
@@ -318,11 +311,10 @@ struct CaseDetailView: View {
                             .font(.body)
                             .fontWeight(.medium)
 
-                        if let note = indicator.note {
-                            Text(note)
-                                .font(.caption2)
-                                .foregroundStyle(.blue)
-                        }
+                        // Show normal/abnormal status
+                        Text(indicator.isNormal ? "正常" : "异常")
+                            .font(.caption2)
+                            .foregroundStyle(indicator.isNormal ? .green : .red)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
@@ -338,7 +330,7 @@ struct CaseDetailView: View {
             Text("发展时间线")
                 .font(.headline)
 
-            ForEach(`case`.timeline) { entry in
+            ForEach(Array(`case`.timeline.enumerated()), id: \.offset) { index, entry in
                 HStack(alignment: .top, spacing: 12) {
                     // 时间标记
                     VStack(spacing: 4) {
@@ -346,7 +338,7 @@ struct CaseDetailView: View {
                             .fill(Color.blue)
                             .frame(width: 12, height: 12)
 
-                        if entry.id != `case`.timeline.last?.id {
+                        if index != `case`.timeline.count - 1 {
                             Rectangle()
                                 .fill(Color.blue.opacity(0.3))
                                 .frame(width: 2, height: 40)
@@ -355,7 +347,7 @@ struct CaseDetailView: View {
 
                     // 内容
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(entry.time)
+                        Text(entry.hour != nil ? "第\(entry.day)天 \(entry.hour!)小时" : "第\(entry.day)天")
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundStyle(.blue)
@@ -401,18 +393,18 @@ struct CaseDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    private var preventionSection: some View {
+    private var commonMistakesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("如何避免")
+            Text("常见错误")
                 .font(.headline)
 
-            ForEach(`case`.prevention, id: \.self) { prevention in
+            ForEach(`case`.commonMistakes, id: \.self) { mistake in
                 HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: "shield.fill")
-                        .foregroundStyle(.green)
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.red)
                         .font(.caption)
 
-                    Text(prevention)
+                    Text(mistake)
                         .font(.callout)
                 }
             }
@@ -535,20 +527,22 @@ struct StepCard: View {
 #Preview("案例详情") {
     let testCase = ReferenceCase(
         type: .sourdough,
-        title: "健康的酸面团",
         stage: "12小时",
         status: .success,
+        title: "健康的酸面团",
+        description: "喂养12小时后的理想状态：体积翻倍，气泡均匀密集",
+        images: ["sourdough_success_12h"],
         indicators: [
-            Indicator(name: "体积", value: "翻倍", note: "理想"),
-            Indicator(name: "气泡", value: "丰富", note: nil)
+            Indicator(name: "体积", value: "翻倍", isNormal: true),
+            Indicator(name: "气泡", value: "丰富", isNormal: true)
         ],
         timeline: [
-            TimelineEntry(time: "0小时", description: "投料完成"),
-            TimelineEntry(time: "6小时", description: "开始膨胀"),
-            TimelineEntry(time: "12小时", description: "达到峰值")
+            TimelineEntry(day: 0, hour: 0, description: "投料完成", imageIndex: nil),
+            TimelineEntry(day: 0, hour: 6, description: "开始膨胀", imageIndex: nil),
+            TimelineEntry(day: 0, hour: 12, description: "达到峰值", imageIndex: nil)
         ],
         tips: ["保持温度25°C", "使用玻璃容器"],
-        summary: "正常发酵的标准示例"
+        commonMistakes: []
     )
 
     CaseDetailView(case: testCase)

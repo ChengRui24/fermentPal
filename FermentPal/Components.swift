@@ -89,25 +89,8 @@ struct EmptyStateView: View {
 }
 
 // MARK: - 加载视图
-
-struct LoadingView: View {
-    let message: String
-
-    init(message: String = "加载中...") {
-        self.message = message
-    }
-
-    var body: some View {
-        VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.2)
-
-            Text(message)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-    }
-}
+// 注意：LoadingView现在在UnifiedComponents.swift中定义
+// 这个旧版本已删除以避免重复声明
 
 // MARK: - 错误视图
 
@@ -405,9 +388,10 @@ struct CardContainer<Content: View>: View {
 
 #Preview("状态徽章") {
     VStack(spacing: 16) {
-        StatusBadge(status: .active)
-        StatusBadge(status: .completed)
-        StatusBadge(status: .discarded)
+        // StatusBadge is private to ContentView.swift, using EnhancedBadge instead
+        EnhancedBadge(text: "进行中", color: .statusActive)
+        EnhancedBadge(text: "已完成", color: .statusCompleted)
+        EnhancedBadge(text: "已废弃", color: .statusDiscarded)
 
         RecordStatusBadge(status: .normal)
         RecordStatusBadge(status: .watch)

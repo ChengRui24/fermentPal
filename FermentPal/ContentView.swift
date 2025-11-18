@@ -367,7 +367,7 @@ struct EditFermentationNameView: View {
     
     private func save() {
         let trimmedName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
-        fermentation.updateName(to: trimmedName)
+        try? fermentation.updateName(to: trimmedName)
         dismiss()
     }
 }

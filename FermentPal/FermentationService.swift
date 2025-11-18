@@ -509,7 +509,7 @@ class FermentationService {
             return AnalyticsEngine.generateTrends(fermentations: allFermentations)
         } catch {
             print("Error fetching fermentations for trends: \(error)")
-            return TrendData(monthlyStats: [], typeDistribution: [:], successRateTrend: [])
+            return TrendData(monthlyCreationCount: [], totalCount: 0, trend: .stable)
         }
     }
 
